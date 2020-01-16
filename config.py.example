@@ -1,0 +1,4 @@
+API_KEY=""
+CX_ID=""
+CSE_URL="https://cse.google.com/cse?cx=CX_ID"
+DB="db.sqlite"
