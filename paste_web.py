@@ -7,8 +7,7 @@ import time
 from paste_utils import send_email
 from paste_utils import config
 from paste_utils import database
-
-paste_query = sys.argv[1]
+import argparse
 
 api_key = config.API_KEY
 cx_id = config.CX_ID
@@ -40,6 +39,19 @@ def get_results(start_index):
     results = results.text.strip("/*O_o*/\ngoogle.search.cse." + api_google_name + "(").strip(");")
     return json.loads(results)
 
+
+# OPCIONES DE MENÚ
+parser = argparse.ArgumentParser(description='Realiza búsquedas en Pastebin, almacena en base de datos e informa cuando haya un nuevo pastebin.')
+parser.add_argument("-q", "--query", help="Consulta a Pastebin", required=True)
+parser.add_argument("--email", type=bool, nargs='?',
+                        const=True, default=False,
+                        help="Habilita el envío de email. Debe configurarse los destinatarios en recipients.txt.")
+parser.add_argument("--csv",
+                        help="Nombre del archivo csv donde se guardan los resultados.")
+
+args = parser.parse_args()
+
+paste_query = args.query
 
 # Acá debo configurar los parámetros restantes para poder usar el buscador de Google.
 # Se actualizan cada vez que ejecuto el script.
@@ -77,13 +89,19 @@ with conn:
             if not database.check_exists_paste(conn, body_hash):
                 print("Se ha detectado un nuevo pastebin.")
                 database.insert_paste(conn, paste)
-                msg = """Se ha detectado un nuevo Pastebin para {0}.\n
-Título: {1}.
-Enlace: {2}.
-Mensaje: {3}
-                """.format(paste_query, title, link, body_text)
-                subject = "Se ha detectado un nuevo Pastebin para {0}".format(paste_query)
-                send_email.send_email(msg, subject)
+
+                if args.email:
+                    msg = """Se ha detectado un nuevo Pastebin para {0}.\n
+    Título: {1}.
+    Enlace: {2}.
+    Mensaje: {3}
+                    """.format(paste_query, title, link, body_text)
+                    subject = "Se ha detectado un nuevo Pastebin para {0}".format(paste_query)
+                    send_email.send_email(msg, subject)
+                
                 time.sleep(1)
+
+                if args.csv:
+                    pass
 
         time.sleep(1)
