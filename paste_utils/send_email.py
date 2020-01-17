@@ -1,7 +1,7 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
-import config
+from paste_utils import config
 
 
 def get_contacts(filename):
@@ -18,7 +18,7 @@ def send_email(message, subject):
     s.starttls()
     s.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
 
-    emails = get_contacts('recipients.txt')
+    emails = get_contacts('paste_utils/recipients.txt')
 
     for email in emails:
         msg = MIMEMultipart() 

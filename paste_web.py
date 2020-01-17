@@ -1,12 +1,12 @@
 from datetime import datetime
 import requests
-import config
 import hashlib
 import json
 import sys
 import time
-import send_email
-import database
+from paste_utils import send_email
+from paste_utils import config
+from paste_utils import database
 
 paste_query = sys.argv[1]
 
