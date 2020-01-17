@@ -8,6 +8,7 @@ import json
 import time
 import sys
 import re
+import send_email
 
 paste_query = sys.argv[1]
 
@@ -66,9 +67,7 @@ def insert_query(conn, paste_query):
 
 def get_results(start_index):
     url = "https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=en&source=gcsc&gss=.com&start={0}&cselibv={1}&cx={2}&q={3}&safe=off&cse_tok={4}&sort=date&exp=csqr,cc&callback={5}".format(start_index, cselibv, cx_id, paste_query, cse_tok, api_google_name)
-    #url = "https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=en&source=gcsc&gss=.com&start={0}&cx={1}&q={2}&safe=off&cse_tok={3}&sort=date&exp=csqr,cc&callback=google.search.cse.api11552".format(start_index, cx_id, query, cse_tok)
     results = requests.get(url)
-    #print(url)
     # Necesito quitar del resultado información de google para quedarme solamente con el json.
     results = results.text.strip("/*O_o*/\ngoogle.search.cse." + api_google_name + "(").strip(");")
     return json.loads(results)
@@ -118,10 +117,13 @@ with conn:
             body_hash = hashlib.sha256(body_text.encode()).hexdigest()
             create_date = datetime.now()
             paste = (title, paste_query_id, link, body_text, body_hash, create_date)
-            if not check_exists_paste(conn, body_hash):
-                print("Línea de pastebin nueva, se inserta en la base de datos...")
-                print(paste)
-                insert_paste(conn, paste)
-            else:
-                print("Información ya existe en la base de datos... No se inserta.")
+            insert_paste(conn, paste)
+            msg = """Se ha detectado un nuevo Pastebin para {0}.\n
+Título: {1}.
+Enlace: {2}.
+Mensaje: {3}
+            """.format(paste_query, title, link, body_text)
+            subject = "Se ha detectado un nuevo Pastebin para {0}".format(paste_query)
+            send_email.send_email(msg, subject)
+
         time.sleep(2)

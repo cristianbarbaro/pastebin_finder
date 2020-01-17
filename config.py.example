@@ -2,3 +2,7 @@ API_KEY=""
 CX_ID=""
 CSE_URL="https://cse.google.com/cse?cx=CX_ID"
 DB="db.sqlite"
+SMTP_HOST=""
+SMTP_PORT=587
+EMAIL_ADDRESS=""
+EMAIL_PASSWORD=""
