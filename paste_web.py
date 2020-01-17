@@ -1,14 +1,12 @@
-import requests
-import sqlite3
-from sqlite3 import Error
 from datetime import datetime
+import requests
 import config
 import hashlib
 import json
-import time
 import sys
-import re
+import time
 import send_email
+import database
 
 paste_query = sys.argv[1]
 
@@ -35,54 +33,12 @@ def get_parameters(url):
     return (cse_tok, cselibv)
 
 
-def create_connection(db_file):
-    conn = None
-    try: 
-        conn = sqlite3.connect(db_file)
-    except Error as e:
-        print(e)
-
-    return conn
-
-
-def insert_paste(conn, paste):
-    sql = """ INSERT INTO pastes(title, paste_query_id, link, body_text, body_hash, create_date)
-              VALUES(?,?,?,?,?,?) """
-    cursor = conn.cursor()
-    cursor.execute(sql, paste)
-    conn.commit()
-    #cursor.close()
-    return cursor.lastrowid
-
-
-def insert_query(conn, paste_query):
-    sql = """ INSERT INTO Queries(paste_query)
-              VALUES(?) """
-    cursor = conn.cursor()
-    cursor.execute(sql, (paste_query,))
-    conn.commit()
-    #cursor.close()
-    return cursor.lastrowid
-
-
 def get_results(start_index):
     url = "https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=en&source=gcsc&gss=.com&start={0}&cselibv={1}&cx={2}&q={3}&safe=off&cse_tok={4}&sort=date&exp=csqr,cc&callback={5}".format(start_index, cselibv, cx_id, paste_query, cse_tok, api_google_name)
     results = requests.get(url)
     # Necesito quitar del resultado información de google para quedarme solamente con el json.
     results = results.text.strip("/*O_o*/\ngoogle.search.cse." + api_google_name + "(").strip(");")
     return json.loads(results)
-
-
-def check_exists_paste(conn, body_hash):
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Pastes WHERE body_hash=?", (body_hash,))
-    return cursor.fetchall()
-
-
-def check_exists_query(conn, paste_query):
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Queries WHERE paste_query=?", (paste_query,))
-    return cursor.fetchall()
 
 
 # Acá debo configurar los parámetros restantes para poder usar el buscador de Google.
@@ -95,13 +51,13 @@ r_json = r_json = get_results(0)
 pages = r_json["cursor"]["pages"]
 
 # Me conecto a la base de datos
-conn  = create_connection(db_file)
+conn  = database.create_connection(db_file)
 
 # Verifico si existe la búsqueda en la base de datos y seteo el id de la búsqueda, si no existe, la creo.
-paste_query_obj = check_exists_query(conn, paste_query)
+paste_query_obj = database.check_exists_query(conn, paste_query)
 
 if not paste_query_obj:
-    paste_query_id = insert_query(conn, paste_query)
+    paste_query_id = database.insert_query(conn, paste_query)
 else:
     paste_query_id = paste_query_obj[0][0]
 
@@ -117,13 +73,17 @@ with conn:
             body_hash = hashlib.sha256(body_text.encode()).hexdigest()
             create_date = datetime.now()
             paste = (title, paste_query_id, link, body_text, body_hash, create_date)
-            insert_paste(conn, paste)
-            msg = """Se ha detectado un nuevo Pastebin para {0}.\n
+            
+            if not database.check_exists_paste(conn, body_hash):
+                print("Se ha detectado un nuevo pastebin.")
+                database.insert_paste(conn, paste)
+                msg = """Se ha detectado un nuevo Pastebin para {0}.\n
 Título: {1}.
 Enlace: {2}.
 Mensaje: {3}
-            """.format(paste_query, title, link, body_text)
-            subject = "Se ha detectado un nuevo Pastebin para {0}".format(paste_query)
-            send_email.send_email(msg, subject)
+                """.format(paste_query, title, link, body_text)
+                subject = "Se ha detectado un nuevo Pastebin para {0}".format(paste_query)
+                send_email.send_email(msg, subject)
+                time.sleep(1)
 
-        time.sleep(2)
+        time.sleep(1)
