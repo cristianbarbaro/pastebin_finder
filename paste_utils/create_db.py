@@ -26,27 +26,35 @@ def create_table(conn, sql_statement):
 def main():
     database = config.DB
 
-    sql_create_pastes_table = """ CREATE TABLE IF NOT EXISTS Pastes (
+    sql_create_pastes_table = """ CREATE TABLE IF NOT EXISTS Results (
                                     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                                    paste_query_id INTEGER NOT NULL,
+                                    query_id INTEGER NOT NULL,
+                                    site_id INTEGER,
                                     title TEXT NOT NULL,
                                     link TEXT NOT NULL,
                                     body_text TEXT NOT NULL,
                                     body_hash TEXT NOT NULL,
                                     create_date TEXT NOT NULL,
-                                    FOREIGN KEY(paste_query_id) REFERENCES Queries(id) 
+                                    FOREIGN KEY(query_id) REFERENCES Queries(id) ,
+                                    FOREIGN KEY(site_id) REFERENCES Sites(id)
                                 ); """
 
     sql_create_queries_table = """ CREATE TABLE IF NOT EXISTS Queries (
                                     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                                    paste_query text NOT NULL
+                                    query TEXT NOT NULL
                                 );"""
+
+    sql_create_sites_table = """ CREATE TABLE IF NOT EXISTS Sites (
+                                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                site TEXT NOT NULL
+                            );"""
 
     conn = create_connection(database)
 
     if conn is not None:
         create_table(conn, sql_create_pastes_table)
         create_table(conn, sql_create_queries_table)
+        create_table(conn, sql_create_sites_table)
     else:
         print("Error!")
 

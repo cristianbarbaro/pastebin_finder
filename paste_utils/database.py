@@ -13,8 +13,8 @@ def create_connection(db_file):
 
 
 def insert_paste(conn, paste):
-    sql = """ INSERT INTO pastes(title, paste_query_id, link, body_text, body_hash, create_date)
-              VALUES(?,?,?,?,?,?) """
+    sql = """ INSERT INTO Results(title, query_id, site_id, link, body_text, body_hash, create_date)
+              VALUES(?,?,?,?,?,?,?) """
     cursor = conn.cursor()
     cursor.execute(sql, paste)
     conn.commit()
@@ -22,11 +22,21 @@ def insert_paste(conn, paste):
     return cursor.lastrowid
 
 
-def insert_query(conn, paste_query):
-    sql = """ INSERT INTO Queries(paste_query)
+def insert_query(conn, query):
+    sql = """ INSERT INTO Queries(query)
               VALUES(?) """
     cursor = conn.cursor()
-    cursor.execute(sql, (paste_query,))
+    cursor.execute(sql, (query,))
+    conn.commit()
+    #cursor.close()
+    return cursor.lastrowid
+
+
+def insert_site(conn, site):
+    sql = """ INSERT INTO Sites(site)
+              VALUES(?) """
+    cursor = conn.cursor()
+    cursor.execute(sql, (site,))
     conn.commit()
     #cursor.close()
     return cursor.lastrowid
@@ -34,11 +44,17 @@ def insert_query(conn, paste_query):
 
 def check_exists_paste(conn, body_hash):
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Pastes WHERE body_hash=?", (body_hash,))
+    cursor.execute("SELECT * FROM Results WHERE body_hash=?", (body_hash,))
     return cursor.fetchall()
 
 
-def check_exists_query(conn, paste_query):
+def check_exists_query(conn, query):
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Queries WHERE paste_query=?", (paste_query,))
+    cursor.execute("SELECT * FROM Queries WHERE query=?", (query,))
+    return cursor.fetchall()
+
+
+def check_exists_site(conn, site):
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Sites WHERE site=?", (site,))
     return cursor.fetchall()
