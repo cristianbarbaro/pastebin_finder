@@ -20,11 +20,12 @@ def check_results(r_json, results_json,api=False):
         title = result["title"]
         link = result["url"]
         body_text = result["contentNoFormatting"]
-    body_hash = hashlib.sha256(body_text.encode()).hexdigest()
+    body_hash = title + body_text 
+    body_hash = hashlib.sha256(body_hash.encode()).hexdigest()
     create_date = datetime.now()
     paste = (title, query_id, site_id, link, body_text, body_hash, create_date)
 
-    #print(paste)
+    print(paste)
     # Retorno el Json para todos los resultados obtenidos (sin tener en cuenta si hay alguno nuevo)
     if args.json:
         results_json["results"].append({
@@ -143,10 +144,10 @@ if __name__ == "__main__":
                     for result in r_json["results"]:
                         results_json = check_results(result, results_json)
                         time.sleep(1)
-
-            if args.json:
-                with open(args.json, "w") as f:
-                    json.dump(results_json, f)
         
         except Exception as e:
             print("Ha ocurrido una excepción: " + str(e))
+
+        if args.json:
+            with open(args.json, "w") as f:
+                json.dump(results_json, f)
