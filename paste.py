@@ -36,7 +36,9 @@ def check_results(r_json, results_json,api=False):
 
     # Escribimos a un csv
     if args.csv:
-        pass
+        csv_file = open(args.csv, "a+")
+        csv_file.write("\"{0}\",\"{1}\",\"{2}\"\n".format(title,link,body_text))
+        csv_file.close()
 
     if not database.check_exists_paste(conn, body_hash):
         print("Se ha detectado un nuevo resultado. Se insertará en la base de datos.")
@@ -120,6 +122,11 @@ if __name__ == "__main__":
             "site": site,
             "results": []
     }
+
+    if args.csv:
+        csv_file = open(args.csv, "w+")
+        csv_file.write("TITLE,LINK,TEXT\n")
+        csv_file.close()
 
     with conn:
         try:
