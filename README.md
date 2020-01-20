@@ -8,9 +8,13 @@ Ejecutar el script para crear la base de datos:
 
 * `python3 paste_utils/create_db.py`
 
-Editar el archivo `recipients.txt` con las direcciones de correo electrónico a quienes será enviado el email del script.
+Editar el archivo `paste_utils/recipients.txt` con las direcciones de correo electrónico a quienes será enviado el email del script.
 
 Ejecutar periodicamente el script:
 
-* `python3 paste_web.py "string_busqueda"`
+* `python3 paste.py --query "string_busqueda" --site "site_url"`
+
+Para ver más opciones:
+
+* `python3 paste.py --help`
 
