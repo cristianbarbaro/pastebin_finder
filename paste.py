@@ -141,9 +141,10 @@ if __name__ == "__main__":
                 for page in pages:
                     start_index = page["start"]
                     r_json = requester.get_results_web(start_index, cselibv, cx_id, query_site, cse_tok)
-                    for result in r_json["results"]:
-                        results_json = check_results(result, results_json)
-                        time.sleep(1)
+                    if "results" in r_json:
+                        for result in r_json["results"]:
+                            results_json = check_results(result, results_json)
+                            time.sleep(1)
         
         except Exception as e:
             print("Ha ocurrido una excepción: " + str(e))
