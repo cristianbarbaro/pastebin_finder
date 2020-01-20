@@ -39,7 +39,7 @@ def check_results(r_json, results_json,api=False):
         pass
 
     if not database.check_exists_paste(conn, body_hash):
-        print("Se ha detectado un nuevo pastebin. Se insertará en la base de datos.")
+        print("Se ha detectado un nuevo resultado. Se insertará en la base de datos.")
         database.insert_paste(conn, paste)
 
         if args.email:
@@ -48,7 +48,7 @@ Título: {1}.
 Enlace: {2}.
 Mensaje: {3}
             """.format(query, title, link, body_text)
-            subject = "Se ha detectado un nuevo Pastebin para {0}".format(query)
+            subject = "Se ha detectado un nuevo resultado para {0} en el sitio {1}".format(query, site)
             send_email.send_email(msg, subject)
 
     return results_json
