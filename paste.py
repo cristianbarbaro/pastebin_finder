@@ -82,8 +82,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     query = args.query
-    query_site = query
+    query_site = "\"{0}\"".format(query)
     site = ""
+    site_id = ""
 
 
     # Me conecto a la base de datos
