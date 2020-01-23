@@ -1,6 +1,7 @@
 API_KEY=""
 CX_ID=""
 DB="db.sqlite"
+LOGFILE="logs/finder.log"
 SMTP_HOST=""
 SMTP_PORT=587
 EMAIL_ADDRESS=""

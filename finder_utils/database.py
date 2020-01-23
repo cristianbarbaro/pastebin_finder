@@ -12,11 +12,11 @@ def create_connection(db_file):
     return conn
 
 
-def insert_finded(conn, finded):
+def insert_found(conn, found):
     sql = """ INSERT INTO Results(title, query_id, site_id, link, body_text, body_hash, create_date)
               VALUES(?,?,?,?,?,?,?) """
     cursor = conn.cursor()
-    cursor.execute(sql, finded)
+    cursor.execute(sql, found)
     conn.commit()
     #cursor.close()
     return cursor.lastrowid
@@ -42,7 +42,7 @@ def insert_site(conn, site):
     return cursor.lastrowid
 
 
-def check_exists_finded(conn, body_hash):
+def check_exists_found(conn, body_hash):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Results WHERE body_hash=?", (body_hash,))
     return cursor.fetchall()

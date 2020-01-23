@@ -26,7 +26,7 @@ def create_table(conn, sql_statement):
 def main():
     database = config.DB
 
-    sql_create_finded_table = """ CREATE TABLE IF NOT EXISTS Results (
+    sql_create_found_table = """ CREATE TABLE IF NOT EXISTS Results (
                                     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                                     query_id INTEGER NOT NULL,
                                     site_id INTEGER,
@@ -52,7 +52,7 @@ def main():
     conn = create_connection(database)
 
     if conn is not None:
-        create_table(conn, sql_create_finded_table)
+        create_table(conn, sql_create_found_table)
         create_table(conn, sql_create_queries_table)
         create_table(conn, sql_create_sites_table)
     else:

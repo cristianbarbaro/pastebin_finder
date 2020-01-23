@@ -8,6 +8,7 @@ import json
 import sys 
 import time
 import hashlib
+import logging
 
 
 def check_results(r_json, results_json,api=False):
@@ -23,9 +24,9 @@ def check_results(r_json, results_json,api=False):
     body_hash = title + body_text 
     body_hash = hashlib.sha256(body_hash.encode()).hexdigest()
     create_date = datetime.now()
-    finded = (title, query_id, site_id, link, body_text, body_hash, create_date)
+    found = (title, query_id, site_id, link, body_text, body_hash, create_date)
 
-    print(finded)
+    logging.debug("Found: " + str(found))
     # Retorno el Json para todos los resultados obtenidos (sin tener en cuenta si hay alguno nuevo)
     if args.json:
         results_json["results"].append({
@@ -40,9 +41,9 @@ def check_results(r_json, results_json,api=False):
         csv_file.write("\"{0}\",\"{1}\",\"{2}\"\n".format(title,link,body_text))
         csv_file.close()
 
-    if not database.check_exists_finded(conn, body_hash):
-        print("Se ha detectado un nuevo resultado. Se inserta en la base de datos.")
-        database.insert_finded(conn, finded)
+    if not database.check_exists_found(conn, body_hash):
+        logging.info("Se ha detectado un nuevo resultado. Se inserta en la base de datos.")
+        database.insert_found(conn, found)
 
         if args.email:
             msg = """Se ha detectado un nuevo resultado para {0}.\n
@@ -86,6 +87,7 @@ if __name__ == "__main__":
     site = ""
     site_id = ""
 
+    logging.basicConfig(format='%(asctime)s: %(message)s',filename=config.LOGFILE,level=logging.DEBUG)
 
     # Me conecto a la base de datos
     conn  = database.create_connection(db_file)
@@ -155,7 +157,7 @@ if __name__ == "__main__":
                             time.sleep(1)
         
         except Exception as e:
-            print("Ha ocurrido un error: " + str(e))
+            logging.warning("Ha ocurrido un error: " + str(e))
 
         if args.json:
             with open(args.json, "w") as f:
