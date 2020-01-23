@@ -9,60 +9,165 @@ import sys
 import time
 import hashlib
 import logging
+from pprint import pprint
 
 
-def check_results(r_json, results_json,api=False):
-    
-    if api:
-        title = result["title"]
-        link = result["link"]
-        body_text = result["snippet"]
-    else:
-        title = result["title"]
-        link = result["url"]
-        body_text = result["contentNoFormatting"]
-    body_hash = title + body_text 
-    body_hash = hashlib.sha256(body_hash.encode()).hexdigest()
-    create_date = datetime.now()
-    found = (title, query_id, site_id, link, body_text, body_hash, create_date)
+class Finder():
 
-    logging.debug("Found: " + str(found))
-    # Retorno el Json para todos los resultados obtenidos (sin tener en cuenta si hay alguno nuevo)
-    if args.json:
-        results_json["results"].append({
+    def __init__(self, query, site, email, api, csv, json):
+        self.cx_id = config.CX_ID
+        self.db_file = config.DB
+        self.api_key = config.API_KEY
+        self.query = query
+        self.site = site
+        self.email = email
+        self.api = api
+        self.csv = csv
+        self.json = json
+        self.cse_tok, self.cselibv = requester.get_parameters_web("http://cse.google.com/cse.js?hpg=1&cx=" + self.cx_id)
+        self.results_json = {
+                "query": query,
+                "site": site,
+                "results": []
+            }   
+
+        self.conn  = database.create_connection(config.DB)
+        self.query_id = self.__check_query(query)
+        self.query_site, self.site_id = self.__check_site(query, site)
+
+        logging.basicConfig(format='%(asctime)s: %(message)s',filename=config.LOGFILE,level=logging.DEBUG)
+
+
+    def __check_query(self, query):
+        # Se verifica si existe la base de datos para agregar el nuevo query si corresponde.
+        query_obj = database.check_exists_query(self.conn, query)
+
+        if not query_obj:
+            query_id = database.insert_query(self.conn, query)
+        else:
+            query_id = query_obj[0][0]
+
+        return query_id
+
+
+    def __check_site(self, query, site):
+        # Si se ingresa un sitio, tengo verificar si existe en la base de datos para agregarlo y concatenar con la búsqueda para que solo devuelva resultados de dicho sitio.
+        query_site = "\"{0}\"".format(query)
+        if site:
+            query_site = query_site + " site:" + site
+
+            site_obj = database.check_exists_site(self.conn, site)
+
+            if not site_obj:
+                site_id = database.insert_site(self.conn, site)
+            else:
+                site_id = site_obj[0][0]
+
+        return (query_site, site_id)
+
+
+    def __sendemail(self, title, link, body_text):
+        if self.email:
+            msg = """Se ha detectado un nuevo resultado para {0}.\n
+Título: {1}.
+Enlace: {2}.
+Mensaje: {3}
+            """.format(self.query, title, link, body_text)
+            subject = "Se ha detectado un nuevo resultado para {0} en el sitio {1}".format(self.query, self.site)
+            send_email.send_email(msg, subject)
+            logging.info("Enviando correo electrónico.")
+
+
+    def __write_to_csv(self, title, link, body_text):
+        if self.csv:
+            csv_file = open(self.csv, "a+")
+            csv_file.write("\"{0}\",\"{1}\",\"{2}\"\n".format(title,link,body_text))
+            logging.info("Escribiendo datos a archivo CSV.")
+            csv_file.close()
+
+
+    def __write_to_json(self):
+        if self.json:
+            with open(self.json, "w") as f:
+                logging.info("Escribiendo datos a archivo JSON.")
+                json.dump(self.results_json, f)
+
+
+    def check_result(self, result, api=False):
+        
+        if api:
+            title = result["title"]
+            link = result["link"]
+            body_text = result["snippet"]
+        else:
+            title = result["title"]
+            link = result["url"]
+            body_text = result["contentNoFormatting"]
+        body_hash = title + body_text 
+        body_hash = hashlib.sha256(body_hash.encode()).hexdigest()
+        create_date = datetime.now()
+        found = (title, self.query_id, self.site_id, link, body_text, body_hash, create_date)
+
+        logging.debug("Found: " + str(found))
+
+        self.__write_to_csv(title, link, body_text)
+
+        if not database.check_exists_found(self.conn, body_hash):
+            logging.info("Se ha detectado un nuevo resultado. Se inserta en la base de datos.")
+            database.insert_found(self.conn, found)
+            self.__sendemail(title, link, body_text)
+
+        # Retorno el Json para todos los resultados obtenidos
+        self.results_json["results"].append({
             "title": title,
             "body": body_text,
             "link": link
         })
 
-    # Escribimos a un csv
-    if args.csv:
-        csv_file = open(args.csv, "a+")
-        csv_file.write("\"{0}\",\"{1}\",\"{2}\"\n".format(title,link,body_text))
-        csv_file.close()
+        return self.results_json
 
-    if not database.check_exists_found(conn, body_hash):
-        logging.info("Se ha detectado un nuevo resultado. Se inserta en la base de datos.")
-        database.insert_found(conn, found)
 
-        if args.email:
-            msg = """Se ha detectado un nuevo resultado para {0}.\n
-Título: {1}.
-Enlace: {2}.
-Mensaje: {3}
-            """.format(query, title, link, body_text)
-            subject = "Se ha detectado un nuevo resultado para {0} en el sitio {1}".format(query, site)
-            send_email.send_email(msg, subject)
+    def get_results(self):
 
-    return results_json
+        if self.csv:
+            csv_file = open(self.csv, "w+")
+            csv_file.write("TITLE,LINK,TEXT\n")
+            csv_file.close()
+
+        with self.conn:
+            try:
+                if args.api:
+                    flag = True
+                    results = requester.get_results_api("1", self.api_key, self.cx_id, self.query_site)
+                    while flag:
+                        for result in results["items"]:
+                            self.check_result(result, True)
+                            time.sleep(1)
+                        if "nextPage" in results["queries"]:
+                            start_index = results["queries"]["nextPage"][0]["startIndex"]
+                            results = requester.get_results_api(start_index, self.api_key, self.cx_id, self.query)
+                        else:
+                            flag = False                  
+                else:
+                    results =  requester.get_results_web(0, self.cselibv, self.cx_id, self.query_site, self.cse_tok)
+                    pages = results["cursor"]["pages"]
+                    for page in pages:
+                        start_index = page["start"]
+                        results = requester.get_results_web(start_index, self.cselibv, self.cx_id, self.query_site, self.cse_tok)
+                        if "results" in results:
+                            for result in results["results"]:
+                                self.check_result(result)
+                                time.sleep(1)
+            
+            except Exception as e:
+                logging.warning("Ha ocurrido un error: " + str(e))
+
+            self.__write_to_json()
+
+        return self.results_json
 
 
 if __name__ == "__main__":
-
-    cx_id = config.CX_ID
-    db_file = config.DB
-    api_key = config.API_KEY
-
 
     # OPCIONES DE MENÚ
     parser = argparse.ArgumentParser(description='Este script busca en el sitio que se ingresa como argumento. Debe configurarse en el CSE de Google.')
@@ -82,83 +187,7 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-    query = args.query
-    query_site = "\"{0}\"".format(query)
-    site = ""
-    site_id = ""
 
-    logging.basicConfig(format='%(asctime)s: %(message)s',filename=config.LOGFILE,level=logging.DEBUG)
+    finder = Finder(args.query, args.site, args.email, args.api, args.csv, args.json)
 
-    # Me conecto a la base de datos
-    conn  = database.create_connection(db_file)
-
-    # Verifico si existe la búsqueda en la base de datos y seteo el id de la búsqueda, si no existe, la creo.
-    query_obj = database.check_exists_query(conn, query)
-
-    if not query_obj:
-        query_id = database.insert_query(conn, query)
-    else:
-        query_id =query_obj[0][0]
-
-
-    if args.site:
-        site = args.site
-        query_site = query_site + " site:" + site
-
-        site_obj = database.check_exists_site(conn, site)
-
-        if not site_obj:
-            site_id = database.insert_site(conn, site)
-        else:
-            site_id = site_obj[0][0]
-
-
-    # Acá debo configurar los parámetros restantes para poder usar el buscador de Google.
-    # Se actualizan cada vez que ejecuto el script.
-    cse_tok, cselibv = requester.get_parameters_web("http://cse.google.com/cse.js?hpg=1&cx=" + cx_id)
-    r_json =  requester.get_results_web(0, cselibv, cx_id, query_site, cse_tok)
-
-    pages = r_json["cursor"]["pages"]
-
-    results_json = {
-            "query": query,
-            "site": site,
-            "results": []
-    }
-
-    if args.csv:
-        csv_file = open(args.csv, "w+")
-        csv_file.write("TITLE,LINK,TEXT\n")
-        csv_file.close()
-
-    with conn:
-        try:
-            if args.api:
-                flag = True
-                results = requester.get_results_api("1", api_key, cx_id, query_site)
-                while flag:
-                    for result in results["items"]:
-                        results_json = check_results(result, results_json, True)
-                        time.sleep(1)
-                    if "nextPage" in results["queries"]:
-                        start_index = results["queries"]["nextPage"][0]["startIndex"]
-                        results = requester.get_results_api(start_index, api_key, cx_id, query_site)
-                    else:
-                        flag = False
-                    
-                    
-            else:
-                for page in pages:
-                    start_index = page["start"]
-                    r_json = requester.get_results_web(start_index, cselibv, cx_id, query_site, cse_tok)
-                    if "results" in r_json:
-                        for result in r_json["results"]:
-                            results_json = check_results(result, results_json)
-                            time.sleep(1)
-        
-        except Exception as e:
-            logging.warning("Ha ocurrido un error: " + str(e))
-
-        if args.json:
-            with open(args.json, "w") as f:
-                json.dump(results_json, f)
+    pprint(finder.get_results())
