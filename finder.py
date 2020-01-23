@@ -1,8 +1,8 @@
 import argparse
 import requester
-from paste_utils import config
-from paste_utils import database
-from paste_utils import send_email
+from finder_utils import config
+from finder_utils import database
+from finder_utils import send_email
 from datetime import datetime
 import json
 import sys 
@@ -23,9 +23,9 @@ def check_results(r_json, results_json,api=False):
     body_hash = title + body_text 
     body_hash = hashlib.sha256(body_hash.encode()).hexdigest()
     create_date = datetime.now()
-    paste = (title, query_id, site_id, link, body_text, body_hash, create_date)
+    finded = (title, query_id, site_id, link, body_text, body_hash, create_date)
 
-    print(paste)
+    print(finded)
     # Retorno el Json para todos los resultados obtenidos (sin tener en cuenta si hay alguno nuevo)
     if args.json:
         results_json["results"].append({
@@ -40,12 +40,12 @@ def check_results(r_json, results_json,api=False):
         csv_file.write("\"{0}\",\"{1}\",\"{2}\"\n".format(title,link,body_text))
         csv_file.close()
 
-    if not database.check_exists_paste(conn, body_hash):
+    if not database.check_exists_finded(conn, body_hash):
         print("Se ha detectado un nuevo resultado. Se inserta en la base de datos.")
-        database.insert_paste(conn, paste)
+        database.insert_finded(conn, finded)
 
         if args.email:
-            msg = """Se ha detectado un nuevo Pastebin para {0}.\n
+            msg = """Se ha detectado un nuevo resultado para {0}.\n
 Título: {1}.
 Enlace: {2}.
 Mensaje: {3}
