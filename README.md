@@ -18,3 +18,6 @@ Para ver m√°s opciones:
 
 * `python3 paste.py --help`
 
+Si se tiene versi√n de Python 3.5 o inferior, usar `PYTHONIOENCODING=utf-8` al correr el script:
+
+* `PYTHONIOENCODING=utf-8 python3 paste.py --query "string_busqueda" --site "site_url"`
