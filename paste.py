@@ -41,7 +41,7 @@ def check_results(r_json, results_json,api=False):
         csv_file.close()
 
     if not database.check_exists_paste(conn, body_hash):
-        print("Se ha detectado un nuevo resultado. Se insertará en la base de datos.")
+        print("Se ha detectado un nuevo resultado. Se inserta en la base de datos.")
         database.insert_paste(conn, paste)
 
         if args.email:
@@ -64,16 +64,16 @@ if __name__ == "__main__":
 
 
     # OPCIONES DE MENÚ
-    parser = argparse.ArgumentParser(description='Realiza búsquedas en Pastebin, almacena en base de datos e informa cuando haya un nuevo pastebin.')
-    parser.add_argument("-q", "--query", help="Consulta a Pastebin", required=True)
+    parser = argparse.ArgumentParser(description='Este script busca en el sitio que se ingresa como argumento. Debe configurarse en el CSE de Google.')
+    parser.add_argument("-q", "--query", help="Consulta que se quiere hacer.", required=True)
     parser.add_argument("--site",
-                            help="Sitio sobre el cual se desea hacer la búsqueda. Debe estar configurado en CSE.")
+                            help="Sitio sobre el cual se desea buscar. Debe estar configurado en CSE.")
     parser.add_argument("--email", type=bool, nargs='?',
                             const=True, default=False,
-                            help="Habilita el envío de email. Debe configurarse los destinatarios en recipients.txt.")
+                            help="Permite enviar emails. Debe configurarse los destinatarios en recipients.txt.")
     parser.add_argument("--api", type=bool, nargs='?',
                             const=True, default=False,
-                            help="Las operaciones se realizan mediante la API de Google. Es necesario contar con una API KEY de una aplicación.")
+                            help="Las operaciones se realizan mediante la API de Google. Es necesario contar con una API KEY de una app de Google.")
     parser.add_argument("--csv",
                             help="Nombre del archivo csv donde se guardan los resultados.")
     parser.add_argument("--json",
@@ -155,7 +155,7 @@ if __name__ == "__main__":
                             time.sleep(1)
         
         except Exception as e:
-            print("Ha ocurrido una excepción: " + str(e))
+            print("Ha ocurrido un error: " + str(e))
 
         if args.json:
             with open(args.json, "w") as f:
