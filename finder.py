@@ -137,7 +137,7 @@ Mensaje: {3}
 
         with self.conn:
             try:
-                if args.api:
+                if self.api:
                     flag = True
                     results = requester.get_results_api("1", self.api_key, self.cx_id, self.query_site)
                     while flag:
