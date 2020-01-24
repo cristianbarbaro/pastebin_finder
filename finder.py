@@ -32,34 +32,35 @@ class Finder():
             }   
 
         self.conn  = database.create_connection(config.DB)
-        self.query_id = self.__check_query(query)
-        self.query_site, self.site_id = self.__check_site(query, site)
+        self.query_id = self.__check_query()
+        self.query_site, self.site_id = self.__check_site()
 
         logging.basicConfig(format='%(asctime)s: %(message)s',filename=config.LOGFILE,level=logging.DEBUG)
 
 
-    def __check_query(self, query):
+    def __check_query(self):
         # Se verifica si existe la base de datos para agregar el nuevo query si corresponde.
-        query_obj = database.check_exists_query(self.conn, query)
+        query_obj = database.check_exists_query(self.conn, self.query)
 
         if not query_obj:
-            query_id = database.insert_query(self.conn, query)
+            query_id = database.insert_query(self.conn, self.query)
         else:
             query_id = query_obj[0][0]
 
         return query_id
 
 
-    def __check_site(self, query, site):
+    def __check_site(self):
         # Si se ingresa un sitio, tengo verificar si existe en la base de datos para agregarlo y concatenar con la búsqueda para que solo devuelva resultados de dicho sitio.
-        query_site = "\"{0}\"".format(query)
-        if site:
-            query_site = query_site + " site:" + site
+        query_site = "\"{0}\"".format(self.query)
+        site_id = ""
+        if self.site:
+            query_site = query_site + " site:" + self.site
 
-            site_obj = database.check_exists_site(self.conn, site)
+            site_obj = database.check_exists_site(self.conn, self.site)
 
             if not site_obj:
-                site_id = database.insert_site(self.conn, site)
+                site_id = database.insert_site(self.conn, self.site)
             else:
                 site_id = site_obj[0][0]
 

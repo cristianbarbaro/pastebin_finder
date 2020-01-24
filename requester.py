@@ -30,7 +30,6 @@ def get_results_web(start_index, cselibv, cx_id, query_site, cse_tok):
             query_site: consulta para el buscador.
             cse_tok: token obtenido de manera dinámica similar a cselibv.
     """
-    #url = "https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=en&source=gcsc&gss=.com&start={0}&cselibv={1}&cx={2}&q={3}&safe=off&cse_tok={4}&sort=date&exp=csqr,cc&callback={5}".format(start_index, cselibv, cx_id, query_site, cse_tok, api_google_name)
     url = "https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=en&source=gcsc&gss=.com&start={0}&cselibv={1}&cx={2}&q={3}&safe=off&cse_tok={4}&exp=csqr,cc&callback={5}".format(start_index, cselibv, cx_id, query_site, cse_tok, api_google_name)
     results = requests.get(url)
     # Necesito quitar del resultado información de google para quedarme solamente con el json.
