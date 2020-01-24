@@ -30,6 +30,11 @@ class Finder():
                 "site": site,
                 "results": []
             }   
+        self.new_results_json = {
+                "query": query,
+                "site": site,
+                "results": []
+            }   
 
         self.conn  = database.create_connection(config.DB)
         self.query_id = self.__check_query()
@@ -94,6 +99,14 @@ Mensaje: {3}
                 json.dump(self.results_json, f)
 
 
+    def __append_to_json(self, json_object, title, link, body_text):
+        json_object["results"].append({
+            "title": title,
+            "body": body_text,
+            "link": link
+        })
+
+
     def check_result(self, result, api=False):
         
         if api:
@@ -117,18 +130,23 @@ Mensaje: {3}
             logging.info("Se ha detectado un nuevo resultado. Se inserta en la base de datos.")
             database.insert_found(self.conn, found)
             self.__sendemail(title, link, body_text)
+            self.__append_to_json(self.new_results_json, title, link, body_text)
 
         # Retorno el Json para todos los resultados obtenidos
-        self.results_json["results"].append({
-            "title": title,
-            "body": body_text,
-            "link": link
-        })
+        self.__append_to_json(self.results_json, title, body_text, link)
 
         return self.results_json
 
 
-    def get_results(self):
+    def get_new_results(self):
+        return self.new_results_json
+
+
+    def get_all_results(self):
+        return self.results_json
+
+
+    def start(self):
 
         if self.csv:
             csv_file = open(self.csv, "w+")
@@ -165,7 +183,7 @@ Mensaje: {3}
 
             self.__write_to_json()
 
-        return self.results_json
+        return
 
 
 if __name__ == "__main__":
@@ -191,4 +209,6 @@ if __name__ == "__main__":
 
     finder = Finder(args.query, args.site, args.email, args.api, args.csv, args.json)
 
-    pprint(finder.get_results())
+    finder.start()
+
+    pprint(finder.get_all_results())
