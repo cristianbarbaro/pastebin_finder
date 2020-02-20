@@ -133,7 +133,7 @@ Mensaje: {3}
             self.__append_to_json(self.new_results_json, title, link, body_text)
 
         # Retorno el Json para todos los resultados obtenidos
-        self.__append_to_json(self.results_json, title, body_text, link)
+        self.__append_to_json(self.results_json, title, link, body_text)
 
         return self.results_json
 
