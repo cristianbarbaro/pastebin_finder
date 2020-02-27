@@ -117,7 +117,7 @@ Mensaje: {3}
             title = result["title"]
             link = result["url"]
             body_text = result["contentNoFormatting"]
-        body_hash = title + body_text 
+        body_hash = link #title + body_text 
         body_hash = hashlib.sha256(body_hash.encode()).hexdigest()
         create_date = datetime.now()
         found = (title, self.query_id, self.site_id, link, body_text, body_hash, create_date)
